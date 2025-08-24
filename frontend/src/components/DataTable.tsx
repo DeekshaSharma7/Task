@@ -1,34 +1,39 @@
+export interface Column<T> {
+  key: string;
+  header: string;
+  render?: (row: T) => React.ReactNode;
+}
+
 interface DataTableProps<T> {
-  columns: string[];
+  columns: Column<T>[];
   data: T[];
-  actions?: (row: T) => React.ReactNode;
 }
 
 const DataTable = <T extends { _id: string }>({
   columns,
   data,
-  actions,
 }: DataTableProps<T>) => (
   <table className="min-w-full border border-gray-200 rounded">
-    <thead className="bg-gray-200">
+    <thead className="bg-gray-100">
       <tr>
         {columns.map((col) => (
-          <th key={col} className="p-2 text-left border">
-            {col}
+          <th
+            key={col.key}
+            className="p-3 text-left border-b text-gray-600 font-medium"
+          >
+            {col.header}
           </th>
         ))}
-        {actions && <th className="p-2 border">Actions</th>}
       </tr>
     </thead>
     <tbody>
       {data.map((row) => (
-        <tr key={row._id} className="hover:bg-gray-100">
+        <tr key={row._id} className="hover:bg-gray-50">
           {columns.map((col) => (
-            <td key={col} className="p-2 border">
-              {(row as any)[col.toLowerCase()]}
+            <td key={col.key} className="p-3 border-b text-gray-700">
+              {col.render ? col.render(row) : (row as any)[col.key]}
             </td>
           ))}
-          {actions && <td className="p-2 border">{actions(row)}</td>}
         </tr>
       ))}
     </tbody>

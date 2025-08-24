@@ -4,6 +4,7 @@ export interface User {
   email: string;
   role: "Admin" | "Manager" | "User";
   token: string;
+  status: "Active" | "Inactive";
 }
 
 export interface Employee {
@@ -11,6 +12,7 @@ export interface Employee {
   name: string;
   email: string;
   role: "Manager" | "User";
+  status: "Active" | "Inactive";
 }
 
 export interface Todo {

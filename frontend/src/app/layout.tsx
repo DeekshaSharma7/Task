@@ -1,7 +1,7 @@
 import "@/styles/globals.css"
 export const metadata = {
   title: "Role-Based System",
-  description: "Employee & Todo Management",
+  description: "User & Todo Management",
 };
 
 export default function RootLayout({
