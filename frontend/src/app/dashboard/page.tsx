@@ -50,6 +50,37 @@ export default function DashboardPage() {
   // ✅ Last 5 tasks as "Recent Activities"
   const recentTasks = [...todos].slice(-5).reverse();
 
+
+  const exportTodosToCSV = () => {
+    if (todos.length === 0) {
+      alert("No tasks to export!");
+      return;
+    }
+
+    // CSV headers
+    const headers = ["Task", "Status", "Assigned To", "Due Date"]; // modify based on your Todo fields
+
+    // Convert todos to CSV rows
+    const rows = todos.map((todo) => [
+      `"${todo.task}"`,
+      `"${todo.status}"`,
+      `"${todo.dueDate || ""}"`,
+    ]);
+
+    const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
+
+    // Create a blob and trigger download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "tasks_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+
   return (
     <div className="flex bg-gray-50 min-h-screen">
       {/* Sidebar */}
@@ -158,7 +189,10 @@ export default function DashboardPage() {
               >
                 + Add New Task
               </Button>
-              <Button className="bg-gray-200 hover:bg-gray-300 text-gray-700">
+              <Button
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700"
+                onClick={exportTodosToCSV}
+              >
                 ⬇ Export Report
               </Button>
             </div>
