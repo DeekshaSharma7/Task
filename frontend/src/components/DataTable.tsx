@@ -31,7 +31,7 @@ const DataTable = <T extends { _id: string }>({
         <tr key={row._id} className="hover:bg-gray-50">
           {columns.map((col) => (
             <td key={col.key} className="p-3 border-b text-gray-700">
-              {col.render ? col.render(row) : (row as any)[col.key]}
+              {col.render ? col.render(row) : (row as Record<string, unknown>)[col.key] as React.ReactNode}
             </td>
           ))}
         </tr>

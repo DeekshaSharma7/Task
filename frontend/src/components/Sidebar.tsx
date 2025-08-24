@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { User } from "../types";
 
 interface SidebarProps {
@@ -10,6 +10,7 @@ interface SidebarProps {
 
 const Sidebar = ({ user }: SidebarProps) => {
   const pathname = usePathname();
+  const router = useRouter();
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: "📊" },
@@ -18,6 +19,13 @@ const Sidebar = ({ user }: SidebarProps) => {
       : []),
     { name: "To-Do", href: "/todo", icon: "✅" },
   ];
+
+  const handleLogout = () => {
+    // Remove user info and token from localStorage
+    localStorage.removeItem("user");
+    // Optional: remove auth token from API helper if you set it globally
+    router.push("/"); // redirect to login page
+  };
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
@@ -56,7 +64,10 @@ const Sidebar = ({ user }: SidebarProps) => {
           <h3 className="text-sm font-medium text-gray-900">Your Role</h3>
           <p className="text-xs text-gray-600 capitalize">{user.role}</p>
         </div>
-        <button className="w-full flex items-center justify-center px-4 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 hover:text-red-800 transition">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center px-4 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 hover:text-red-800 transition"
+        >
           🚪 Logout
         </button>
       </div>

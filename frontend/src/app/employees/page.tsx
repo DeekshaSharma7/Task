@@ -8,6 +8,7 @@ import Header from "../../components/Header";
 import DataTable, { Column } from "../../components/DataTable";
 import Button from "../../components/Button";
 import UserModal from "../../components/UserModal";
+import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 
 export default function UsersPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -16,6 +17,9 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState("All Roles");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -30,7 +34,7 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       const res = await API.get("/users");
-      setUsers(res.data); // Ensure the backend returns User[]
+      setUsers(res.data);
     } catch (err) {
       console.error("Failed to fetch users:", err);
     }
@@ -67,12 +71,12 @@ export default function UsersPage() {
         </span>
       ),
     },
-    
     {
       key: "actions",
       header: "Actions",
       render: (u) => (
         <div className="flex gap-2">
+          {/* Edit button is available for everyone */}
           <button
             className="text-blue-600 hover:underline"
             onClick={() => {
@@ -82,21 +86,19 @@ export default function UsersPage() {
           >
             ✏️
           </button>
-          <button
-            className="text-red-600 hover:underline"
-            onClick={async () => {
-              if (confirm("Are you sure you want to delete this user?")) {
-                try {
-                  await API.delete(`/users/${u._id}`);
-                  setUsers(users.filter((usr) => usr._id !== u._id));
-                } catch (err) {
-                  console.error("Delete failed:", err);
-                }
-              }
-            }}
-          >
-            🗑️
-          </button>
+
+          {/* Delete button only for Admin */}
+          {user.role === "Admin" && (
+            <button
+              className="text-red-600 hover:underline"
+              onClick={() => {
+                setUserToDelete(u);
+                setIsDeleteModalOpen(true);
+              }}
+            >
+              🗑️
+            </button>
+          )}
         </div>
       ),
     },
@@ -157,7 +159,7 @@ export default function UsersPage() {
           setIsModalOpen(false);
           setEditingUser(null);
         }}
-        initialData={editingUser ?? undefined} // Only pass User type
+        initialData={editingUser ?? undefined}
         onUserAdded={(newUser: User) => {
           if (editingUser) {
             setUsers(
@@ -167,6 +169,28 @@ export default function UsersPage() {
             setUsers([...users, newUser]);
           }
         }}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setUserToDelete(null);
+        }}
+        onConfirm={async () => {
+          if (!userToDelete) return;
+          try {
+            await API.delete(`/users/${userToDelete._id}`);
+            setUsers(users.filter((usr) => usr._id !== userToDelete._id));
+          } catch (err) {
+            console.error("Delete failed:", err);
+          } finally {
+            setIsDeleteModalOpen(false);
+            setUserToDelete(null);
+          }
+        }}
+        message={`Are you sure you want to delete ${userToDelete?.name}?`}
       />
     </div>
   );

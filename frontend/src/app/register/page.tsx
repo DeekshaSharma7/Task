@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import API from "../../lib/api";
 import Button from "../../components/Button";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,15 +17,18 @@ export default function RegisterPage() {
   const handleRegister = async () => {
     try {
       await API.post("/auth/register", { name, email, password, role });
-      alert("Registered successfully!");
-      router.push("/");
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Registration failed");
+      toast.success("Registered successfully!"); 
+      router.push("/"); 
+    } catch (err: unknown) {
+      // ✅ type-safe error handling
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || "Registration failed");
     }
   };
 
   return (
     <div className="flex justify-center items-center h-screen">
+      <Toaster position="top-right" /> {/* ✅ toast container */}
       <div className="w-96 p-6 shadow-lg rounded bg-white">
         <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
         <input
@@ -47,7 +52,9 @@ export default function RegisterPage() {
         />
         <select
           value={role}
-          onChange={(e) => setRole(e.target.value as any)}
+          onChange={(e) =>
+            setRole(e.target.value as "User" | "Manager" | "Admin")
+          }
           className="w-full p-2 mb-6 border rounded"
         >
           <option value="User">User</option>
@@ -59,9 +66,9 @@ export default function RegisterPage() {
         </Button>
         <p className="mt-4 text-center text-sm">
           Already have an account?{" "}
-          <a href="/" className="text-blue-600">
+          <Link href="/" className="text-blue-600">
             Login
-          </a>
+          </Link>
         </p>
       </div>
     </div>

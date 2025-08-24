@@ -8,8 +8,9 @@ import Button from "../../components/Button";
 import TodoModal from "../../components/TodoModal";
 import { User, Todo } from "../../types";
 import DataTable, { Column } from "../../components/DataTable";
+import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 
-// Simple Tooltip wrapper
+// Tooltip wrapper
 const Tooltip = ({
   text,
   children,
@@ -30,6 +31,9 @@ export default function TodoPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [todoToDelete, setTodoToDelete] = useState<Todo | null>(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -83,20 +87,24 @@ export default function TodoPage() {
     }
   };
 
-  const deleteTodo = async (id: string) => {
+  const deleteTodo = async () => {
+    if (!todoToDelete) return;
     try {
-      await API.delete(`/todos/${id}`);
-      setTodos(todos.filter((todo) => todo._id !== id));
+      await API.delete(`/todos/${todoToDelete._id}`);
+      setTodos(todos.filter((todo) => todo._id !== todoToDelete._id));
     } catch (err) {
       console.log(err);
+    } finally {
+      setIsDeleteModalOpen(false);
+      setTodoToDelete(null);
     }
   };
 
-  const columns = [
+  const columns: Column<Todo>[] = [
     {
       key: "task",
       header: "Task",
-      render: (todo: Todo) => (
+      render: (todo) => (
         <span
           className={
             todo.status === "Completed" ? "text-gray-400 line-through" : ""
@@ -109,13 +117,13 @@ export default function TodoPage() {
     {
       key: "dueDate",
       header: "Due Date",
-      render: (todo: Todo) =>
+      render: (todo) =>
         todo.dueDate ? new Date(todo.dueDate).toLocaleDateString() : "-",
     },
     {
       key: "status",
       header: "Status",
-      render: (todo: Todo) => (
+      render: (todo) => (
         <span
           className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
             todo.status === "Completed"
@@ -130,7 +138,7 @@ export default function TodoPage() {
     {
       key: "actions",
       header: "Actions",
-      render: (todo: Todo) => (
+      render: (todo) => (
         <div className="flex gap-3">
           <Tooltip
             text={todo.status === "Pending" ? "Mark as Complete" : "Undo Task"}
@@ -157,7 +165,10 @@ export default function TodoPage() {
 
           <Tooltip text="Delete Task">
             <button
-              onClick={() => deleteTodo(todo._id)}
+              onClick={() => {
+                setTodoToDelete(todo);
+                setIsDeleteModalOpen(true);
+              }}
               className="text-red-600 hover:underline"
             >
               🗑️
@@ -166,21 +177,18 @@ export default function TodoPage() {
         </div>
       ),
     },
-  ] as Column<Todo>[];
+  ];
 
   if (!user) return null;
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
       <Sidebar user={user} />
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col">
         <Header title="To-Do List" user={user} />
 
         <div className="p-6 space-y-4">
-          {/* Add button */}
           <div className="flex justify-between items-center">
             <p className="text-gray-500">
               Manage your tasks and stay organized
@@ -193,34 +201,41 @@ export default function TodoPage() {
             </Button>
           </div>
 
-          {/* Table */}
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <DataTable data={todos} columns={columns} />
           </div>
         </div>
-
-        {/* Modal */}
-        <TodoModal
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setEditingTodo(null);
-          }}
-          onSubmit={(data) => {
-            if (editingTodo) {
-              updateTodo(editingTodo._id, data);
-            } else {
-              addTodo(data);
-            }
-          }}
-          initialData={
-            editingTodo
-              ? { task: editingTodo.task, dueDate: editingTodo.dueDate || "" }
-              : undefined
-          }
-          mode={editingTodo ? "edit" : "add"}
-        />
       </div>
+
+      {/* Todo Modal */}
+      <TodoModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingTodo(null);
+        }}
+        onSubmit={(data) => {
+          if (editingTodo) updateTodo(editingTodo._id, data);
+          else addTodo(data);
+        }}
+        initialData={
+          editingTodo
+            ? { task: editingTodo.task, dueDate: editingTodo.dueDate || "" }
+            : undefined
+        }
+        mode={editingTodo ? "edit" : "add"}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setTodoToDelete(null);
+        }}
+        onConfirm={deleteTodo}
+        message={`Are you sure you want to delete "${todoToDelete?.task}"?`}
+      />
     </div>
   );
 }
