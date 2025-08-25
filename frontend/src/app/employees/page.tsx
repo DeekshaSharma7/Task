@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import API, { setAuthToken } from "../../lib/api";
 import { User } from "../../types";
 import Sidebar from "../../components/Sidebar";
@@ -11,36 +12,46 @@ import UserModal from "../../components/UserModal";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 
 export default function UsersPage() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All Roles");
   const [isModalOpen, setIsModalOpen] = useState(false);
+   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const userObj: User = JSON.parse(storedUser);
-      setUser(userObj);
-      setAuthToken(userObj.token);
-      fetchUsers();
-    }
-  }, []);
+ useEffect(() => {
+   const storedUser = localStorage.getItem("user");
+   if (!storedUser) {
+     router.push("/login");
+     return;
+   }
+   const userObj: User = JSON.parse(storedUser);
+   setUser(userObj);
+   setAuthToken(userObj.token);
 
-  const fetchUsers = async () => {
-    try {
-      const res = await API.get("/users");
-      setUsers(res.data);
-    } catch (err) {
-      console.error("Failed to fetch users:", err);
-    }
-  };
+   if (userObj.role !== "Admin" && userObj.role !== "Manager") {
+     router.push("/dashboard");
+     return;
+   }
 
-  if (!user) return null;
+   fetchUsers().finally(() => setLoading(false));
+ }, [router]);
+
+ const fetchUsers = async () => {
+   try {
+     const res = await API.get("/users");
+     setUsers(res.data);
+   } catch (err) {
+     console.error("Failed to fetch users:", err);
+   }
+ };
+
+ if (loading) return <div className="p-6">Loading...</div>;
+ if (!user) return null;
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =

@@ -7,6 +7,7 @@ import {
   getUsers,
   deleteUser,
 } from "../controllers/userController.js";
+import { protect, authorizeRoles } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ const router = express.Router();
 router.post("/register", register);
 
 // Get all users
-router.get("/", getUsers);
+router.get("/", protect, authorizeRoles("Admin", "Manager"), getUsers);
 
 // Update a user by ID
 router.put("/:id", updateUser);
